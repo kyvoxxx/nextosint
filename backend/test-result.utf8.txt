@@ -1,0 +1,94 @@
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/fatih/OneDrive/Bureau/Dev/m/nextosint/backend[39m
+
+{"level":30,"time":1778374906398,"pid":19100,"hostname":"Kyvoxx_Computer","url":"https://example.com","msg":"URL aggregator: starting investigation"}
+{"level":30,"time":1778374906402,"pid":6468,"hostname":"Kyvoxx_Computer","email":"test@example.com","msg":"Email aggregator: starting investigation"}
+{"level":30,"time":1778374906402,"pid":15388,"hostname":"Kyvoxx_Computer","domain":"example.com","msg":"Domain aggregator: starting investigation"}
+{"level":30,"time":1778374906405,"pid":6996,"hostname":"Kyvoxx_Computer","ip":"8.8.8.8","msg":"IP aggregator: starting investigation"}
+{"level":30,"time":1778374906400,"pid":19100,"hostname":"Kyvoxx_Computer","url":"https://example.com","riskLevel":"low","score":10,"msg":"URL aggregator: investigation complete"}
+ [32m✓[39m tests/unit/aggregators/url.aggregator.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 7[2mms[22m[39m
+{"level":30,"time":1778374906404,"pid":15388,"hostname":"Kyvoxx_Computer","domain":"example.com","riskLevel":"low","score":10,"msg":"Domain aggregator: investigation complete"}
+ [32m✓[39m tests/unit/aggregators/domain.aggregator.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 6[2mms[22m[39m
+{"level":30,"time":1778374906407,"pid":6996,"hostname":"Kyvoxx_Computer","ip":"8.8.8.8","riskLevel":"low","score":10,"msg":"IP aggregator: investigation complete"}
+ [32m✓[39m tests/unit/aggregators/ip.aggregator.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 5[2mms[22m[39m
+{"level":30,"time":1778374906404,"pid":6468,"hostname":"Kyvoxx_Computer","email":"test@example.com","riskLevel":"medium","score":55,"msg":"Email aggregator: investigation complete"}
+{"level":30,"time":1778374906409,"pid":6468,"hostname":"Kyvoxx_Computer","email":"test@example.com","msg":"Email aggregator: starting investigation"}
+{"level":30,"time":1778374906409,"pid":6468,"hostname":"Kyvoxx_Computer","email":"test@example.com","riskLevel":"low","score":0,"msg":"Email aggregator: investigation complete"}
+ [32m✓[39m tests/unit/aggregators/email.aggregator.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 10[2mms[22m[39m
+{"level":30,"time":1778374906839,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/email","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906842,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/email","statusCode":401,"responseTime":4.443199999630451,"msg":"Request completed"}
+{"level":30,"time":1778374906843,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/email","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906847,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/email","statusCode":200,"responseTime":4.521999999880791,"msg":"Request completed"}
+{"level":30,"time":1778374906848,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/email","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906849,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/email","statusCode":400,"responseTime":1.4475000016391277,"msg":"Request completed"}
+{"level":30,"time":1778374906850,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/ip","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906851,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/ip","statusCode":400,"responseTime":1.171900000423193,"msg":"Request completed"}
+{"level":30,"time":1778374906852,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/ip","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906852,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/ip","statusCode":400,"responseTime":0.6910999976098537,"msg":"Request completed"}
+{"level":30,"time":1778374906853,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/ip","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906853,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/ip","statusCode":200,"responseTime":0.6933000013232231,"msg":"Request completed"}
+{"level":30,"time":1778374906854,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/domain","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906854,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/domain","statusCode":200,"responseTime":0.8272999972105026,"msg":"Request completed"}
+{"level":30,"time":1778374906855,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/domain","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906856,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/domain","statusCode":400,"responseTime":0.7137000001966953,"msg":"Request completed"}
+{"level":30,"time":1778374906856,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/url","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906859,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/url","statusCode":400,"responseTime":3.2820000015199184,"msg":"Request completed"}
+{"level":30,"time":1778374906860,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/url","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906861,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/url","statusCode":400,"responseTime":1.501400001347065,"msg":"Request completed"}
+{"level":30,"time":1778374906862,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/url","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906863,"pid":6444,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/investigate/url","statusCode":200,"responseTime":0.8737000003457069,"msg":"Request completed"}
+{"level":30,"time":1778374906863,"pid":6444,"hostname":"Kyvoxx_Computer","method":"GET","url":"/api/health","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":50,"time":1778374906863,"pid":6444,"hostname":"Kyvoxx_Computer","err":{"success":false,"data":null,"cached":false,"error":{"code":"RATE_LIMIT_EXCEEDED","message":"Rate limit exceeded. Max 10 requests per 1 minute. Try again later."}},"url":"/api/health","method":"GET","msg":"Unhandled error"}
+{"level":30,"time":1778374906863,"pid":6444,"hostname":"Kyvoxx_Computer","method":"GET","url":"/api/health","statusCode":500,"responseTime":0.4730999991297722,"msg":"Request completed"}
+{"level":30,"time":1778374906867,"pid":6444,"hostname":"Kyvoxx_Computer","method":"GET","url":"/api/nonexistent","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906868,"pid":6444,"hostname":"Kyvoxx_Computer","method":"GET","url":"/api/nonexistent","statusCode":404,"responseTime":0.2815000005066395,"msg":"Request completed"}
+ [31m❯[39m tests/integration/investigate.test.ts [2m([22m[2m13 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[90m 224[2mms[22m[39m
+[31m   [31m×[31m Investigate Routes Integration[2m > [22mGET /api/health should return healthy status[90m 4[2mms[22m[31m[39m
+[31m     → expected 500 to be 200 // Object.is equality[39m
+{"level":30,"time":1778374906906,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/register","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906912,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/register","statusCode":200,"responseTime":7.742899999022484,"msg":"Request completed"}
+{"level":30,"time":1778374906913,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/register","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906915,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/register","statusCode":400,"responseTime":1.2778999991714954,"msg":"Request completed"}
+{"level":30,"time":1778374906915,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/register","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906916,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/register","statusCode":400,"responseTime":1.1339000016450882,"msg":"Request completed"}
+{"level":30,"time":1778374906917,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/register","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906917,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/register","statusCode":400,"responseTime":0.5130000002682209,"msg":"Request completed"}
+{"level":30,"time":1778374906918,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/login","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906918,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/login","statusCode":200,"responseTime":0.8084999993443489,"msg":"Request completed"}
+{"level":30,"time":1778374906919,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/login","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906919,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/login","statusCode":401,"responseTime":0.43890000134706497,"msg":"Request completed"}
+{"level":30,"time":1778374906920,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/login","ip":"127.0.0.1","msg":"Incoming request"}
+{"level":30,"time":1778374906920,"pid":3148,"hostname":"Kyvoxx_Computer","method":"POST","url":"/api/auth/login","statusCode":401,"responseTime":0.3865000009536743,"msg":"Request completed"}
+ [32m✓[39m tests/integration/auth.test.ts [2m([22m[2m7 tests[22m[2m)[22m[90m 205[2mms[22m[39m
+
+[31m⎯⎯⎯⎯⎯⎯⎯[1m[7m Failed Tests 1 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/integration/investigate.test.ts[2m > [22mInvestigate Routes Integration[2m > [22mGET /api/health should return healthy status
+[31m[1mAssertionError[22m: expected 500 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 500[39m
+
+[36m [2m❯[22m tests/integration/investigate.test.ts:[2m248:33[22m[39m
+    [90m246| [39m    })[33m;[39m
+    [90m247| [39m
+    [90m248| [39m    [34mexpect[39m(response[33m.[39mstatusCode)[33m.[39m[34mtoBe[39m([34m200[39m)[33m;[39m
+    [90m   | [39m                                [31m^[39m
+    [90m249| [39m    [34mexpect[39m(response[33m.[39m[34mjson[39m()[33m.[39mstatus)[33m.[39m[34mtoBe[39m([32m'healthy'[39m)[33m;[39m
+    [90m250| [39m  })[33m;[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/1]⎯[22m[39m
+
+[2m Test Files [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m5 passed[39m[22m[90m (6)[39m
+[2m      Tests [22m [1m[31m1 failed[39m[22m[2m | [22m[1m[32m24 passed[39m[22m[90m (25)[39m
+[2m   Start at [22m 03:01:45
+[2m   Duration [22m 1.22s[2m (transform 530ms, setup 61ms, collect 1.59s, tests 457ms, environment 1ms, prepare 1.29s)[22m
+
+
+===STDERR===
+
+===MSG===
+Command failed: npx vitest run 2>&1

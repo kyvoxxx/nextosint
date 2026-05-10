@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+.pnp.*
+.yarn/*
+
+# Build output
+dist/
+.next/
+out/
+
+# Environment
+.env
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+pino-pretty.log
+
+# Testing
+coverage/
+.vitest/
+
+# Prisma
+prisma/migrations/
+
+# Docker
+.docker/
+
+# Screenshots (generated)
+screenshots/
+
+# Misc
+*.tsbuildinfo
+docker.log
+docker_build.log
+ps.log
+backend-logs.txt
+frontend.log
+backend/tsc.log

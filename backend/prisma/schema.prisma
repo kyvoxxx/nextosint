@@ -1,0 +1,60 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Investigation records — the core audit trail.
+/// Each row represents one completed OSINT investigation.
+model Investigation {
+  id         String   @id @default(uuid())
+  type       String   @db.VarChar(10)     // email | ip | domain | url
+  target     String   @db.VarChar(500)    // The investigated target
+  rawSources Json     @map("raw_sources")  // Full API responses (JSONB)
+  report     Json                          // AI-generated report (JSONB)
+  riskLevel  String   @map("risk_level") @db.VarChar(10)  // low | medium | high | critical
+  riskScore  Int      @map("risk_score")  // 0-100
+  tags       String[] @default([])         // Classification tags
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz()
+  userId     String?  @map("user_id")
+  user       User?    @relation(fields: [userId], references: [id])
+
+  @@index([type])
+  @@index([createdAt(sort: Desc)])
+  @@index([riskLevel])
+  @@index([target])
+  @@map("investigations")
+}
+
+/// Users — optional authentication support.
+model User {
+  id             String          @id @default(uuid())
+  email          String          @unique @db.VarChar(255)
+  passwordHash   String          @map("password_hash") @db.VarChar(255)
+  role           String          @default("analyst") @db.VarChar(20)
+  createdAt      DateTime        @default(now()) @map("created_at") @db.Timestamptz()
+  investigations Investigation[]
+  watchlistItems Watchlist[]
+
+  @@map("users")
+}
+
+/// Watchlist — monitored targets that are re-scanned on a schedule.
+model Watchlist {
+  id              String   @id @default(uuid())
+  type            String   @db.VarChar(10)     // email | ip | domain | url
+  target          String   @db.VarChar(500)
+  lastChecked     DateTime? @map("last_checked") @db.Timestamptz()
+  lastRiskLevel   String?  @map("last_risk_level") @db.VarChar(10)
+  alertThreshold  String   @default("medium") @map("alert_threshold") @db.VarChar(10)
+  isActive        Boolean  @default(true) @map("is_active")
+  userId          String?  @map("user_id")
+  user            User?    @relation(fields: [userId], references: [id])
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz()
+
+  @@index([isActive])
+  @@map("watchlist")
+}

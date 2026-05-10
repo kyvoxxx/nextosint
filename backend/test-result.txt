@@ -1,0 +1,56 @@
+
+[1m[7m[36m RUN [39m[27m[22m [36mv2.1.9 [39m[90mC:/Users/fatih/OneDrive/Bureau/Dev/m/nextosint/backend[39m
+
+{"level":30,"time":1778374750111,"pid":11672,"hostname":"Kyvoxx_Computer","email":"test@example.com","msg":"Email aggregator: starting investigation"}
+{"level":30,"time":1778374750113,"pid":12320,"hostname":"Kyvoxx_Computer","domain":"example.com","msg":"Domain aggregator: starting investigation"}
+{"level":30,"time":1778374750113,"pid":7116,"hostname":"Kyvoxx_Computer","ip":"8.8.8.8","msg":"IP aggregator: starting investigation"}
+{"level":30,"time":1778374750117,"pid":17280,"hostname":"Kyvoxx_Computer","url":"https://example.com","msg":"URL aggregator: starting investigation"}
+{"level":30,"time":1778374750115,"pid":7116,"hostname":"Kyvoxx_Computer","ip":"8.8.8.8","riskLevel":"low","score":10,"msg":"IP aggregator: investigation complete"}
+{"level":30,"time":1778374750115,"pid":12320,"hostname":"Kyvoxx_Computer","domain":"example.com","riskLevel":"low","score":10,"msg":"Domain aggregator: investigation complete"}
+ [32m✓[39m tests/unit/aggregators/ip.aggregator.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 7[2mms[22m[39m
+ [32m✓[39m tests/unit/aggregators/domain.aggregator.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 7[2mms[22m[39m
+{"level":30,"time":1778374750114,"pid":11672,"hostname":"Kyvoxx_Computer","email":"test@example.com","riskLevel":"medium","score":55,"msg":"Email aggregator: investigation complete"}
+{"level":30,"time":1778374750117,"pid":11672,"hostname":"Kyvoxx_Computer","email":"test@example.com","msg":"Email aggregator: starting investigation"}
+{"level":30,"time":1778374750117,"pid":11672,"hostname":"Kyvoxx_Computer","email":"test@example.com","riskLevel":"low","score":0,"msg":"Email aggregator: investigation complete"}
+ [32m✓[39m tests/unit/aggregators/email.aggregator.test.ts [2m([22m[2m2 tests[22m[2m)[22m[90m 9[2mms[22m[39m
+{"level":30,"time":1778374750118,"pid":17280,"hostname":"Kyvoxx_Computer","url":"https://example.com","riskLevel":"low","score":10,"msg":"URL aggregator: investigation complete"}
+ [32m✓[39m tests/unit/aggregators/url.aggregator.test.ts [2m([22m[2m1 test[22m[2m)[22m[90m 6[2mms[22m[39m
+ [31m❯[39m tests/integration/auth.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31m❯[39m tests/integration/investigate.test.ts [2m([22m[2m13 tests[22m[2m | [22m[33m13 skipped[39m[2m)[22m[90m 80[2mms[22m[39m
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m4 passed[39m[22m[90m (6)[39m
+[2m      Tests [22m [1m[32m5 passed[39m[22m[2m | [22m[33m13 skipped[39m[90m (18)[39m
+[2m   Start at [22m 02:59:09
+[2m   Duration [22m 1.11s[2m (transform 588ms, setup 74ms, collect 1.27s, tests 109ms, environment 1ms, prepare 1.32s)[22m
+
+
+---STDERR---
+[31m⎯⎯⎯⎯⎯⎯[1m[7m Failed Suites 2 [27m[22m⎯⎯⎯⎯⎯⎯⎯[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/integration/auth.test.ts[2m [ tests/integration/auth.test.ts ][22m
+[31m[1mError[22m: Failed to load url ../../utils/logger.js (resolved id: ../../utils/logger.js) in C:/Users/fatih/OneDrive/Bureau/Dev/m/nextosint/backend/src/services/screenshot.ts. Does the file exist?[39m
+[90m [2m❯[22m loadAndTransform node_modules/vite/dist/node/chunks/dep-BK3b2jBa.js:[2m51969:17[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[1/3]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/integration/investigate.test.ts[2m > [22mInvestigate Routes Integration
+[31m[1mTypeError[22m: this.redis.defineCommand is not a function[39m
+[90m [2m❯[22m new RedisStore node_modules/@fastify/rate-limit/store/RedisStore.js:[2m41:16[22m[39m
+[90m [2m❯[22m fastifyRateLimit node_modules/@fastify/rate-limit/index.js:[2m120:31[22m[39m
+[90m [2m❯[22m Plugin.exec node_modules/avvio/lib/plugin.js:[2m125:28[22m[39m
+[90m [2m❯[22m Boot._loadPlugin node_modules/avvio/boot.js:[2m446:10[22m[39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[2/3]⎯[22m[39m
+
+[31m[1m[7m FAIL [27m[22m[39m tests/integration/investigate.test.ts[2m > [22mInvestigate Routes Integration
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'close')[39m
+[36m [2m❯[22m tests/integration/investigate.test.ts:[2m93:15[22m[39m
+    [90m 91| [39m
+    [90m 92| [39m  [34mafterAll[39m([35masync[39m () [33m=>[39m {
+    [90m 93| [39m    [35mawait[39m app[33m.[39m[34mclose[39m()[33m;[39m
+    [90m   | [39m              [31m^[39m
+    [90m 94| [39m  })[33m;[39m
+    [90m 95| [39m
+
+[31m[2m⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯⎯[3/3]⎯[22m[39m
+
