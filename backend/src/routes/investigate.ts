@@ -28,7 +28,6 @@ export async function investigateRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Body: { email: string } }>(
     '/api/investigate/email',
     {
-      onRequest: [app.authenticate],
       schema: {
         description: 'Investigate an email address for breach exposure and digital footprint',
         tags: ['investigate'],
@@ -87,7 +86,6 @@ export async function investigateRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Body: { ip: string } }>(
     '/api/investigate/ip',
     {
-      onRequest: [app.authenticate],
       schema: {
         description: 'Investigate an IP address for abuse, geolocation, and open ports',
         tags: ['investigate'],
@@ -141,7 +139,6 @@ export async function investigateRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Body: { domain: string } }>(
     '/api/investigate/domain',
     {
-      onRequest: [app.authenticate],
       schema: {
         description: 'Investigate a domain for attack surface, subdomains, and DNS configuration',
         tags: ['investigate'],
@@ -195,7 +192,6 @@ export async function investigateRoutes(app: FastifyInstance): Promise<void> {
   app.post<{ Body: { url: string } }>(
     '/api/investigate/url',
     {
-      onRequest: [app.authenticate],
       schema: {
         description: 'Investigate a URL for phishing, malware, and suspicious behaviour',
         tags: ['investigate'],
