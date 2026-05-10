@@ -4,10 +4,12 @@ import { emailInvestigateSchema } from '../schemas/investigate.schema.js';
 import { ipInvestigateSchema } from '../schemas/investigate.schema.js';
 import { domainInvestigateSchema } from '../schemas/investigate.schema.js';
 import { urlInvestigateSchema } from '../schemas/investigate.schema.js';
+import { usernameInvestigateSchema } from '../schemas/investigate.schema.js';
 import { aggregateEmail } from '../services/aggregator/email.aggregator.js';
 import { aggregateIp } from '../services/aggregator/ip.aggregator.js';
 import { aggregateDomain } from '../services/aggregator/domain.aggregator.js';
 import { aggregateUrl } from '../services/aggregator/url.aggregator.js';
+import { aggregateUsername } from '../services/aggregator/username.aggregator.js';
 import { getCached, setCache } from '../services/cache.js';
 import { getPrisma } from '../config/database.js';
 import { logger } from '../utils/logger.js';
@@ -238,6 +240,66 @@ export async function investigateRoutes(app: FastifyInstance): Promise<void> {
       await setCache('url', url, record);
 
       return reply.send({ success: true, data: record, cached: false } satisfies ApiResponse<InvestigationRecord<'url'>>);
+    },
+  );
+
+  // ─── POST /api/investigate/username ──────────────────────────
+  app.post<{ Body: { username: string } }>(
+    '/api/investigate/username',
+    {
+      schema: {
+        description: 'Investigate a username across multiple social platforms',
+        tags: ['investigate'],
+        body: {
+          type: 'object',
+          required: ['username'],
+          properties: {
+            username: { type: 'string' },
+          },
+        },
+      },
+    },
+    async (request, reply) => {
+      const parsed = usernameInvestigateSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.status(400).send({
+          success: false,
+          data: null,
+          cached: false,
+          error: { code: 'VALIDATION_ERROR', message: parsed.error.issues[0]?.message ?? 'Invalid username' },
+        });
+      }
+
+      const { username } = parsed.data;
+
+      // Check cache
+      // The return type is technically ANY or unknown since InvestigationRecord might not formally have "username" source type yet
+      const cached = await getCached<any>('username', username);
+      if (cached) {
+        return reply.send({ success: true, data: cached, cached: true });
+      }
+
+      const { sources, report } = await aggregateUsername(username);
+
+      const record = {
+        id: randomUUID(),
+        type: 'username',
+        target: username,
+        sources,
+        report,
+        timestamp: new Date().toISOString(),
+      };
+
+      if (record.report.riskLevel !== 'unknown') {
+        const persistPromise = persistInvestigation(record as any).catch((err) =>
+          logger.error({ err }, 'Failed to persist username investigation')
+        );
+        const cachePromise = setCache('username', username, record);
+        
+        await Promise.allSettled([persistPromise, cachePromise]);
+      }
+
+      return reply.send({ success: true, data: record, cached: false });
     },
   );
 }

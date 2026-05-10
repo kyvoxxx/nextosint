@@ -10,6 +10,7 @@ import { investigateRoutes } from './routes/investigate.js';
 import { historyRoutes } from './routes/history.js';
 import { dashboardRoutes } from './routes/dashboard.js';
 import { authRoutes } from './routes/auth.js';
+import { debugRoutes } from './routes/debug.js';
 import jwtPlugin from './plugins/jwt.js';
 import { logger } from './utils/logger.js';
 import { AppError } from './utils/errors.js';
@@ -127,6 +128,7 @@ export async function buildApp(): Promise<FastifyInstance> {
   await app.register(investigateRoutes);
   await app.register(historyRoutes);
   await app.register(dashboardRoutes);
+  await app.register(debugRoutes);
 
   // ─── Health check ────────────────────────────────────────────
   app.get('/api/health', {

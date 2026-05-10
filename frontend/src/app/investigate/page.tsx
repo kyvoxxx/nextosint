@@ -2,21 +2,23 @@
 
 import { useState, useCallback } from 'react';
 import { clsx } from 'clsx';
-import { Mail, Server, Globe, Link2, Search, Zap } from 'lucide-react';
+import { Mail, Server, Globe, Link2, Search, Zap, User } from 'lucide-react';
 import { GlassCard } from '@/components/shared/GlassCard';
 import { NeonButton } from '@/components/shared/NeonButton';
 import { ScanTerminal } from '@/components/shared/ScanTerminal';
 import { IntelReport } from '@/components/shared/IntelReport';
-import { investigateEmail, investigateIp, investigateDomain, investigateUrl } from '@/lib/api';
+import { UsernameGrid } from '@/components/shared/UsernameGrid';
+import { investigateEmail, investigateIp, investigateDomain, investigateUrl, investigateUsername } from '@/lib/api';
 import type { AiReport } from '@shared/types/ai-report';
 
-type InvestigateTab = 'email' | 'ip' | 'domain' | 'url';
+type InvestigateTab = 'email' | 'ip' | 'domain' | 'url' | 'username';
 
-const TABS: { key: InvestigateTab; label: string; icon: typeof Mail; placeholder: string }[] = [
+const TABS: { key: InvestigateTab; label: string; icon: any; placeholder: string }[] = [
   { key: 'email', label: 'Email', icon: Mail, placeholder: 'target@example.com' },
   { key: 'ip', label: 'IP Address', icon: Server, placeholder: '203.0.113.42' },
   { key: 'domain', label: 'Domain', icon: Globe, placeholder: 'suspicious-domain.com' },
   { key: 'url', label: 'URL', icon: Link2, placeholder: 'https://suspicious-site.com/login' },
+  { key: 'username', label: 'Username', icon: User, placeholder: 'target_user' },
 ];
 
 // Simulated log lines per investigation phase
@@ -48,6 +50,11 @@ function generateScanLogs(type: string, target: string): string[] {
       '[OK] VirusTotal — submitting URL for analysis...',
       '[OK] Screenshot — capturing page render...',
     ],
+    username: [
+      '[OK] Sherlock module — initiating concurrent platform scan...',
+      '[OK] Querying 20+ social media networks...',
+      '[OK] Analyzing HTTP status and redirect patterns...',
+    ],
   };
 
   return [
@@ -65,7 +72,7 @@ export default function InvestigatePage() {
   const [input, setInput] = useState('');
   const [isScanning, setIsScanning] = useState(false);
   const [logs, setLogs] = useState<string[]>([]);
-  const [result, setResult] = useState<{ report: AiReport; target: string; type: string } | null>(null);
+  const [result, setResult] = useState<{ report: AiReport; target: string; type: string; sources?: any } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleScan = useCallback(async () => {
@@ -89,15 +96,17 @@ export default function InvestigatePage() {
         ip: investigateIp,
         domain: investigateDomain,
         url: investigateUrl,
+        username: investigateUsername,
       }[activeTab];
 
       const { data } = await apiFn(input.trim());
-      const record = data as { report: AiReport; target: string; type: string };
+      const record = data as { report: AiReport; target: string; type: string; sources?: any };
 
       setResult({
         report: record.report,
         target: record.target ?? input.trim(),
         type: record.type ?? activeTab,
+        sources: record.sources,
       });
       setLogs((prev) => [...prev, '[OK] Investigation complete ✓']);
     } catch (err) {
@@ -192,11 +201,14 @@ export default function InvestigatePage() {
 
       {/* ─── Results ─────────────────────────── */}
       {result && (
-        <IntelReport
-          report={result.report}
-          target={result.target}
-          type={result.type}
-        />
+        <div className="space-y-6">
+          <IntelReport
+            report={result.report}
+            target={result.target}
+            type={result.type}
+          />
+          {result.type === 'username' && <UsernameGrid sources={result.sources} />}
+        </div>
       )}
     </div>
   );

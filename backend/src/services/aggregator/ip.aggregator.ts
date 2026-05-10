@@ -1,115 +1,125 @@
-import { queryIpInfo } from '../sources/ipinfo.js';
-import { queryAbuseIpDb } from '../sources/abuseipdb.js';
-import { queryShodan } from '../sources/shodan.js';
-import { queryVtIp } from '../sources/virustotal.js';
 import { analyzeWithClaude } from '../ai/claude.client.js';
 import { IP_SYSTEM_PROMPT } from '../ai/prompts/ip.prompt.js';
 import { logger } from '../../utils/logger.js';
-import type { IpSources } from '../../../../shared/types/investigation.js';
 import type { AiReport } from '../../../../shared/types/ai-report.js';
+import {
+  queryIpApi,
+  queryShodanInternetdb,
+  queryAbuseIpdb,
+  queryVtIp,
+  queryHackerTargetNmap,
+} from '../sources/ip.free.js';
 
-/**
- * IP address investigation aggregator.
- *
- * 1. Fetches from IPInfo, AbuseIPDB, Shodan, VirusTotal in parallel
- * 2. Sends aggregated data to Claude for synthesis
- * 3. Returns sources + AI report
- */
-export async function aggregateIp(ip: string): Promise<{
-  sources: IpSources;
-  report: AiReport;
-}> {
-  logger.info({ ip }, 'IP aggregator: starting investigation');
+export async function aggregateIp(ip: string): Promise<{ sources: any; report: AiReport }> {
+  logger.info({ ip }, 'IP aggregator: starting investigation (Free APIs)');
 
-  const [ipInfoResult, abuseResult, shodanResult, vtResult] = await Promise.allSettled([
-    queryIpInfo(ip),
-    queryAbuseIpDb(ip),
-    queryShodan(ip),
+  const [ipapiResult, shodanResult, abuseResult, vtResult, nmapResult] = await Promise.allSettled([
+    queryIpApi(ip),
+    queryShodanInternetdb(ip),
+    queryAbuseIpdb(ip),
     queryVtIp(ip),
+    queryHackerTargetNmap(ip),
   ]);
 
-  const sources: IpSources = {
-    ipinfo: ipInfoResult.status === 'fulfilled' ? ipInfoResult.value : null,
-    abuseipdb: abuseResult.status === 'fulfilled' ? abuseResult.value : null,
+  const sources = {
+    ipApi: ipapiResult.status === 'fulfilled' ? ipapiResult.value : null,
     shodan: shodanResult.status === 'fulfilled' ? shodanResult.value : null,
-    virustotal: vtResult.status === 'fulfilled' ? vtResult.value : null,
+    abuseIpdb: abuseResult.status === 'fulfilled' ? abuseResult.value : null,
+    virusTotal: vtResult.status === 'fulfilled' ? vtResult.value : null,
+    nmap: nmapResult.status === 'fulfilled' ? nmapResult.value : null,
   };
 
   const unavailable: string[] = [];
-  if (!sources.ipinfo) unavailable.push('IPInfo (geolocation)');
-  if (!sources.abuseipdb) unavailable.push('AbuseIPDB (abuse scoring)');
-  if (!sources.shodan) unavailable.push('Shodan (port scan)');
-  if (!sources.virustotal) unavailable.push('VirusTotal (reputation)');
+  if (!sources.ipApi) unavailable.push('ip-api.com (Geolocation)');
+  if (!sources.shodan) unavailable.push('Shodan InternetDB');
+  if (!sources.abuseIpdb) unavailable.push('AbuseIPDB');
+  if (!sources.virusTotal) unavailable.push('VirusTotal');
+  if (!sources.nmap) unavailable.push('HackerTarget Nmap');
+
+  if (
+    !sources.ipApi &&
+    !sources.shodan &&
+    !sources.abuseIpdb &&
+    !sources.virusTotal &&
+    !sources.nmap
+  ) {
+    logger.warn({ ip }, 'All IP sources failed (graceful degradation)');
+    return {
+      sources,
+      report: {
+        riskLevel: 'unknown',
+        score: 0,
+        summary: 'No data sources available at this time. Network error or rate limits reached.',
+        indicators: [],
+        recommendations: ['Retry investigation later'],
+        tags: ['no-data'],
+      },
+    };
+  }
 
   const userData = formatIpData(ip, sources);
   const aiResponse = await analyzeWithClaude(IP_SYSTEM_PROMPT, userData, unavailable);
 
-  logger.info(
-    { ip, riskLevel: aiResponse.report.riskLevel, score: aiResponse.report.score },
-    'IP aggregator: investigation complete',
-  );
-
   return { sources, report: aiResponse.report };
 }
 
-function formatIpData(ip: string, sources: IpSources): string {
-  const sections: string[] = [`# IP Address Investigation: ${ip}\n`];
+function formatIpData(ip: string, sources: any): string {
+  const sections: string[] = [`# IP Investigation: ${ip}\n`];
 
-  if (sources.ipinfo) {
-    const i = sources.ipinfo;
-    sections.push(`## Geolocation (IPInfo)`);
-    sections.push(`- Location: ${i.city}, ${i.region}, ${i.country}`);
-    sections.push(`- Coordinates: ${i.loc}`);
-    sections.push(`- Organization: ${i.org}`);
-    if (i.hostname) sections.push(`- Hostname: ${i.hostname}`);
-    if (i.timezone) sections.push(`- Timezone: ${i.timezone}`);
-  }
-
-  if (sources.abuseipdb) {
-    const a = sources.abuseipdb;
-    sections.push(`\n## Abuse Report (AbuseIPDB)`);
-    sections.push(`- Abuse Confidence Score: ${a.abuseConfidenceScore}%`);
-    sections.push(`- Total Reports: ${a.totalReports}`);
-    sections.push(`- Last Reported: ${a.lastReportedAt ?? 'Never'}`);
-    sections.push(`- Whitelisted: ${a.isWhitelisted}`);
-    sections.push(`- ISP: ${a.isp}`);
-    sections.push(`- Usage Type: ${a.usageType}`);
-    sections.push(`- Country: ${a.countryCode}`);
+  if (sources.ipApi && sources.ipApi.status === 'success') {
+    const s = sources.ipApi;
+    sections.push(`## Geolocation & Hosting`);
+    sections.push(`- ISP: ${s.isp}`);
+    sections.push(`- Organization: ${s.org}`);
+    sections.push(`- AS: ${s.as}`);
+    sections.push(`- Location: ${s.city}, ${s.regionName}, ${s.country} (${s.countryCode})`);
+    sections.push(`- Mobile: ${s.mobile}`);
+    sections.push(`- Proxy/VPN: ${s.proxy}`);
+    sections.push(`- Hosting/Datacenter: ${s.hosting}`);
+    if (s.reverse) sections.push(`- Reverse DNS: ${s.reverse}`);
   }
 
   if (sources.shodan) {
     const s = sources.shodan;
-    sections.push(`\n## Port Scan (Shodan)`);
-    sections.push(`- Open Ports: ${s.ports.length > 0 ? s.ports.join(', ') : 'None detected'}`);
-    sections.push(`- OS: ${s.os ?? 'Unknown'}`);
-    sections.push(`- ISP: ${s.isp}`);
-    sections.push(`- Organization: ${s.org}`);
+    sections.push(`## Shodan InternetDB`);
+    sections.push(`- Open Ports: ${(s.ports || []).join(', ')}`);
+    if (s.hostnames?.length) sections.push(`- Hostnames: ${s.hostnames.join(', ')}`);
+    if (s.cpes?.length) sections.push(`- CPEs: ${s.cpes.join(', ')}`);
+    if (s.tags?.length) sections.push(`- Tags: ${s.tags.join(', ')}`);
+    if (s.vulns?.length) sections.push(`- Vulnerabilities: ${s.vulns.join(', ')}`);
+  }
 
-    if (s.vulns.length > 0) {
-      sections.push(`- Known Vulnerabilities: ${s.vulns.join(', ')}`);
+  if (sources.abuseIpdb && sources.abuseIpdb.data) {
+    const a = sources.abuseIpdb.data;
+    sections.push(`## AbuseIPDB`);
+    sections.push(`- Confidence of Abuse: ${a.abuseConfidenceScore}%`);
+    sections.push(`- Total Reports: ${a.totalReports}`);
+    sections.push(`- Distinct Users Reporting: ${a.numDistinctUsers}`);
+    sections.push(`- Last Reported: ${a.lastReportedAt || 'Never'}`);
+    sections.push(`- Domain: ${a.domain}`);
+  }
+
+  if (sources.virusTotal && sources.virusTotal.data && sources.virusTotal.data.attributes) {
+    const vt = sources.virusTotal.data.attributes;
+    sections.push(`## VirusTotal`);
+    const stats = vt.last_analysis_stats;
+    if (stats) {
+      sections.push(`- Analysis Stats:`);
+      sections.push(`  - Malicious: ${stats.malicious}`);
+      sections.push(`  - Suspicious: ${stats.suspicious}`);
+      sections.push(`  - Undetected: ${stats.undetected}`);
+      sections.push(`  - Harmless: ${stats.harmless}`);
     }
-
-    if (s.hostnames.length > 0) {
-      sections.push(`- Hostnames: ${s.hostnames.join(', ')}`);
-    }
-
-    if (s.services.length > 0) {
-      sections.push('\n### Services:');
-      for (const svc of s.services.slice(0, 10)) {
-        const name = [svc.product, svc.version].filter(Boolean).join(' ') || 'unknown';
-        sections.push(`- Port ${svc.port}/${svc.transport}: ${name}`);
-      }
+    if (vt.asn) sections.push(`- ASN: ${vt.asn}`);
+    if (vt.as_owner) sections.push(`- AS Owner: ${vt.as_owner}`);
+    if (vt.regional_internet_registry) {
+      sections.push(`- Registry: ${vt.regional_internet_registry}`);
     }
   }
 
-  if (sources.virustotal) {
-    const v = sources.virustotal;
-    sections.push(`\n## Reputation (VirusTotal)`);
-    sections.push(`- Malicious: ${v.stats.malicious} vendors`);
-    sections.push(`- Suspicious: ${v.stats.suspicious} vendors`);
-    sections.push(`- Harmless: ${v.stats.harmless} vendors`);
-    sections.push(`- Undetected: ${v.stats.undetected} vendors`);
-    sections.push(`- Report: ${v.permalink}`);
+  if (sources.nmap) {
+    sections.push(`## HackerTarget Nmap`);
+    sections.push('```\n' + sources.nmap.substring(0, 500) + (sources.nmap.length > 500 ? '...\n```' : '\n```'));
   }
 
   return sections.join('\n');

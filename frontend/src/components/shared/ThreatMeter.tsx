@@ -24,6 +24,7 @@ const RISK_COLORS = {
   medium:   { stroke: '#ffaa00', glow: 'rgba(255, 170, 0, 0.4)', bg: 'rgba(255, 170, 0, 0.08)' },
   high:     { stroke: '#ff6644', glow: 'rgba(255, 102, 68, 0.4)', bg: 'rgba(255, 102, 68, 0.08)' },
   critical: { stroke: '#ff3366', glow: 'rgba(255, 51, 102, 0.4)', bg: 'rgba(255, 51, 102, 0.08)' },
+  unknown:  { stroke: '#9ca3af', glow: 'rgba(156, 163, 175, 0.4)', bg: 'rgba(156, 163, 175, 0.08)' },
 } as const;
 
 function getRiskFromScore(score: number): RiskLevel {

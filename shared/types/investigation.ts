@@ -1,6 +1,6 @@
 import type { AiReport, RiskLevel } from './ai-report.js';
 
-export type InvestigationType = 'email' | 'ip' | 'domain' | 'url';
+export type InvestigationType = 'email' | 'ip' | 'domain' | 'url' | 'username';
 
 // ─── Source Response Types ───────────────────────────────────
 
@@ -157,6 +157,7 @@ export type SourcesMap = {
   ip: IpSources;
   domain: DomainSources;
   url: UrlSources;
+  username: any;
 };
 
 // ─── Investigation Record ────────────────────────────────────

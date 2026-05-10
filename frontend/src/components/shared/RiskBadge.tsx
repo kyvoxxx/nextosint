@@ -37,6 +37,12 @@ const RISK_CONFIG = {
     classes: 'bg-cyber-accent-dim text-cyber-accent border-cyber-accent/25',
     dotClass: 'bg-cyber-accent',
   },
+  unknown: {
+    label: 'Unknown',
+    icon: AlertTriangle,
+    classes: 'bg-gray-500/10 text-gray-400 border-gray-500/25',
+    dotClass: 'bg-gray-500',
+  },
 } as const;
 
 const SIZE_CLASSES = {

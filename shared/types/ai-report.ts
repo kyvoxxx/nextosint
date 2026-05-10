@@ -1,4 +1,4 @@
-export type RiskLevel = 'low' | 'medium' | 'high' | 'critical';
+export type RiskLevel = 'unknown' | 'low' | 'medium' | 'high' | 'critical';
 
 /** Structured output that Claude must return */
 export interface AiReport {

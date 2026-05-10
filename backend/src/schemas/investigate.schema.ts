@@ -87,3 +87,15 @@ export const urlInvestigateSchema = z.object({
 });
 
 export type UrlInvestigateInput = z.infer<typeof urlInvestigateSchema>;
+
+// ─── Username investigation ────────────────────────────────────
+export const usernameInvestigateSchema = z.object({
+  username: z
+    .string()
+    .min(2, 'Username too short')
+    .max(50, 'Username too long')
+    .regex(/^[a-zA-Z0-9_\-.]+$/, 'Username contains invalid characters')
+    .transform((val) => val.trim()),
+});
+
+export type UsernameInvestigateInput = z.infer<typeof usernameInvestigateSchema>;

@@ -60,6 +60,13 @@ export function investigateUrl(url: string) {
   });
 }
 
+export function investigateUsername(username: string) {
+  return request<unknown>('/investigate/username', {
+    method: 'POST',
+    body: JSON.stringify({ username }),
+  });
+}
+
 // ─── History ──────────────────────────────────────────────────
 
 export function fetchHistory(params: {

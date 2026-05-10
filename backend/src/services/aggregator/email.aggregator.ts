@@ -1,95 +1,136 @@
-import { queryHibp } from '../sources/haveibeenpwned.js';
-import { queryHunter } from '../sources/hunter.js';
 import { analyzeWithClaude } from '../ai/claude.client.js';
 import { EMAIL_SYSTEM_PROMPT } from '../ai/prompts/email.prompt.js';
 import { logger } from '../../utils/logger.js';
-import type { EmailSources } from '../../../../shared/types/investigation.js';
 import type { AiReport } from '../../../../shared/types/ai-report.js';
+import {
+  queryLeakCheck,
+  queryHibpPastes,
+  queryEmailRep,
+  queryGravatar,
+  queryMxRecords,
+  queryEva,
+  getPastebinDork,
+} from '../sources/email.free.js';
 
-/**
- * Email investigation aggregator.
- *
- * 1. Fetches data from HaveIBeenPwned and Hunter.io in parallel
- * 2. Sends aggregated data to Claude for synthesis
- * 3. Returns a complete InvestigationRecord
- */
-export async function aggregateEmail(email: string): Promise<{
-  sources: EmailSources;
-  report: AiReport;
-}> {
-  logger.info({ email }, 'Email aggregator: starting investigation');
+export async function aggregateEmail(email: string): Promise<{ sources: any; report: AiReport }> {
+  logger.info({ email }, 'Email aggregator: starting investigation (Free APIs)');
 
-  // Fetch from all sources in parallel
-  const [hibpResult, hunterResult] = await Promise.allSettled([
-    queryHibp(email),
-    queryHunter(email),
-  ]);
+  const [leakResult, pasteResult, repResult, gravatarResult, mxResult, evaResult] =
+    await Promise.allSettled([
+      queryLeakCheck(email),
+      queryHibpPastes(email),
+      queryEmailRep(email),
+      queryGravatar(email),
+      queryMxRecords(email),
+      queryEva(email),
+    ]);
 
-  const sources: EmailSources = {
-    haveibeenpwned: hibpResult.status === 'fulfilled' ? hibpResult.value : null,
-    hunter: hunterResult.status === 'fulfilled' ? hunterResult.value : null,
+  const sources = {
+    leakcheck: leakResult.status === 'fulfilled' ? leakResult.value : null,
+    hibp_pastes: pasteResult.status === 'fulfilled' ? pasteResult.value : null,
+    emailrep: repResult.status === 'fulfilled' ? repResult.value : null,
+    gravatar: gravatarResult.status === 'fulfilled' ? gravatarResult.value : null,
+    mx: mxResult.status === 'fulfilled' ? mxResult.value : null,
+    eva: evaResult.status === 'fulfilled' ? evaResult.value : null,
+    pastebin_dork: getPastebinDork(email),
   };
 
-  // Track which sources were unavailable
   const unavailable: string[] = [];
-  if (!sources.haveibeenpwned) unavailable.push('HaveIBeenPwned (breach database)');
-  if (!sources.hunter) unavailable.push('Hunter.io (email context)');
+  if (!sources.leakcheck) unavailable.push('LeakCheck (Breach DB)');
+  if (!sources.hibp_pastes) unavailable.push('HIBP Pastes');
+  if (!sources.emailrep) unavailable.push('EmailRep (Reputation)');
+  if (!sources.mx) unavailable.push('MX records resolver');
+  if (!sources.eva) unavailable.push('Eva (Email Validator)');
 
-  // Format data for AI analysis
+  // If ALL primary APIs failed, graceful degradation
+  if (
+    !sources.leakcheck &&
+    !sources.hibp_pastes &&
+    !sources.emailrep &&
+    !sources.mx &&
+    !sources.eva
+  ) {
+    logger.warn({ email }, 'All email sources failed (graceful degradation)');
+    return {
+      sources,
+      report: {
+        riskLevel: 'unknown',
+        score: 0,
+        summary: 'No data sources available at this time. Network error or rate limits reached.',
+        indicators: [],
+        recommendations: ['Retry investigation later'],
+        tags: ['no-data'],
+      },
+    };
+  }
+
   const userData = formatEmailData(email, sources);
-
-  // Get AI synthesis
   const aiResponse = await analyzeWithClaude(EMAIL_SYSTEM_PROMPT, userData, unavailable);
 
-  logger.info(
-    { email, riskLevel: aiResponse.report.riskLevel, score: aiResponse.report.score },
-    'Email aggregator: investigation complete',
-  );
-
-  return {
-    sources,
-    report: aiResponse.report,
-  };
+  return { sources, report: aiResponse.report };
 }
 
-function formatEmailData(email: string, sources: EmailSources): string {
+function formatEmailData(email: string, sources: any): string {
   const sections: string[] = [`# Email Investigation: ${email}\n`];
 
-  // HaveIBeenPwned data
-  if (sources.haveibeenpwned) {
-    const h = sources.haveibeenpwned;
-    sections.push(`## HaveIBeenPwned Results`);
-    sections.push(`- Total breaches: ${h.breachCount}`);
-    sections.push(`- Paste appearances: ${h.pasteCount}`);
-
-    if (h.breaches.length > 0) {
-      sections.push('\n### Breach Details:');
-      for (const breach of h.breaches.slice(0, 15)) {
-        sections.push(
-          `- **${breach.Title}** (${breach.BreachDate}): ${breach.PwnCount.toLocaleString()} records, Data types: ${breach.DataClasses.join(', ')}${breach.IsSensitive ? ' [SENSITIVE]' : ''}${breach.IsVerified ? ' [VERIFIED]' : ''}`,
-        );
-      }
-      if (h.breaches.length > 15) {
-        sections.push(`- ... and ${h.breaches.length - 15} more breaches`);
-      }
+  if (sources.leakcheck) {
+    sections.push(`## LeakCheck Results`);
+    sections.push(`- Success: ${sources.leakcheck.success}`);
+    sections.push(`- Breaches Found: ${sources.leakcheck.found}`);
+    if (sources.leakcheck.fields) {
+      sections.push(`- Leaked fields: ${sources.leakcheck.fields.join(', ')}`);
     }
   }
 
-  // Hunter.io data
-  if (sources.hunter) {
-    const hu = sources.hunter;
-    sections.push(`\n## Hunter.io Results`);
-    sections.push(`- Email score: ${hu.score}/100`);
-    sections.push(`- SMTP server found: ${hu.smtp_server}`);
-    sections.push(`- SMTP check passed: ${hu.smtp_check}`);
-    sections.push(`- Public sources mentioning this email: ${hu.sources}`);
-    sections.push(`- Domain: ${hu.domain}`);
-    if (hu.first_name || hu.last_name) {
-      sections.push(`- Associated name: ${[hu.first_name, hu.last_name].filter(Boolean).join(' ')}`);
+  if (sources.hibp_pastes) {
+    sections.push(`## HaveIBeenPwned Pastes`);
+    sections.push(`- Pastes found: ${Array.isArray(sources.hibp_pastes) ? sources.hibp_pastes.length : 0}`);
+    if (Array.isArray(sources.hibp_pastes) && sources.hibp_pastes.length > 0) {
+      sections.push(`- Sample IDs: ${sources.hibp_pastes.map((p: any) => p.Id).slice(0, 5).join(', ')}`);
     }
-    if (hu.company) sections.push(`- Company: ${hu.company}`);
-    if (hu.position) sections.push(`- Position: ${hu.position}`);
   }
+
+  if (sources.emailrep) {
+    sections.push(`## EmailRep.io`);
+    sections.push(`- Reputation: ${sources.emailrep.reputation}`);
+    sections.push(`- Suspicious: ${sources.emailrep.suspicious}`);
+    sections.push(`- References: ${sources.emailrep.references}`);
+    if (sources.emailrep.details) {
+      sections.push(`- Blacklisted: ${sources.emailrep.details.blacklisted}`);
+      sections.push(`- Malicious activity: ${sources.emailrep.details.malicious_activity}`);
+      sections.push(`- Credentials leaked: ${sources.emailrep.details.credentials_leaked}`);
+      sections.push(`- Data breaches: ${sources.emailrep.details.data_breach}`);
+      sections.push(`- Profiles connected: ${(sources.emailrep.details.profiles || []).join(', ') || 'none'}`);
+    }
+  }
+
+  if (sources.gravatar) {
+    sections.push(`## Gravatar profile`);
+    sections.push(`- Profile exists: ${sources.gravatar.found}`);
+  }
+
+  if (sources.eva && sources.eva.data) {
+    const d = sources.eva.data;
+    sections.push(`## Eva Validation`);
+    sections.push(`- Valid syntax: ${d.valid_syntax}`);
+    sections.push(`- Disposable email: ${d.disposable}`);
+    sections.push(`- Webmail provider: ${d.webmail}`);
+    sections.push(`- Deliverable: ${d.deliverable}`);
+    sections.push(`- Catch-all: ${d.catch_all}`);
+  }
+
+  if (sources.mx) {
+    sections.push(`## MX Records`);
+    sections.push(`- Servers found: ${Array.isArray(sources.mx) ? sources.mx.length : 0}`);
+    if (Array.isArray(sources.mx)) {
+      sources.mx.forEach((record: any) => {
+        sections.push(`  - Exchange: ${record.exchange} (Priority: ${record.priority})`);
+      });
+    }
+  }
+
+  sections.push(`## Manual Verification Links`);
+  sections.push(`- Pastebin Dork: ${sources.pastebin_dork}`);
 
   return sections.join('\n');
 }

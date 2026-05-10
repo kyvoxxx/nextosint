@@ -34,10 +34,12 @@ export async function dashboardRoutes(app: FastifyInstance): Promise<void> {
         ipCount,
         domainCount,
         urlCount,
+        usernameCount,
         criticalCount,
         highCount,
         mediumCount,
         lowCount,
+        unknownCount,
         recentInvestigations,
         scanTrendRaw,
       ] = await Promise.all([
@@ -46,10 +48,12 @@ export async function dashboardRoutes(app: FastifyInstance): Promise<void> {
         prisma.investigation.count({ where: { type: 'ip' } }),
         prisma.investigation.count({ where: { type: 'domain' } }),
         prisma.investigation.count({ where: { type: 'url' } }),
+        prisma.investigation.count({ where: { type: 'username' } }),
         prisma.investigation.count({ where: { riskLevel: 'critical' } }),
         prisma.investigation.count({ where: { riskLevel: 'high' } }),
         prisma.investigation.count({ where: { riskLevel: 'medium' } }),
         prisma.investigation.count({ where: { riskLevel: 'low' } }),
+        prisma.investigation.count({ where: { riskLevel: 'unknown' } }),
         prisma.investigation.findMany({
           where: {
             riskLevel: { in: ['critical', 'high'] },
@@ -84,12 +88,14 @@ export async function dashboardRoutes(app: FastifyInstance): Promise<void> {
           ip: ipCount,
           domain: domainCount,
           url: urlCount,
+          username: usernameCount,
         },
         riskDistribution: {
           critical: criticalCount,
           high: highCount,
           medium: mediumCount,
           low: lowCount,
+          unknown: unknownCount,
         },
         recentAlerts: recentInvestigations.map((inv: any) => ({
           id: inv.id,

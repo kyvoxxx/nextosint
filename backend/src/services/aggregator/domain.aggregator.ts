@@ -1,143 +1,122 @@
-import { queryCrtSh } from '../sources/crtsh.js';
-import { queryDns } from '../sources/dns.resolver.js';
-import { queryVtDomain } from '../sources/virustotal.js';
-import { queryWhois } from '../sources/whois.js';
 import { analyzeWithClaude } from '../ai/claude.client.js';
 import { DOMAIN_SYSTEM_PROMPT } from '../ai/prompts/domain.prompt.js';
 import { logger } from '../../utils/logger.js';
-import type { DomainSources } from '../../../../shared/types/investigation.js';
 import type { AiReport } from '../../../../shared/types/ai-report.js';
+import {
+  queryCrtsh,
+  resolveAllDns,
+  queryHackerTargetDns,
+  queryUrlScanSearchDomain,
+  queryVtDomain,
+} from '../sources/domain.free.js';
 
-/**
- * Domain investigation aggregator.
- *
- * 1. Fetches from crt.sh, DNS, VirusTotal, WHOIS in parallel
- * 2. Sends aggregated data to Claude for attack surface analysis
- * 3. Returns sources + AI report
- */
-export async function aggregateDomain(domain: string): Promise<{
-  sources: DomainSources;
-  report: AiReport;
-}> {
-  logger.info({ domain }, 'Domain aggregator: starting investigation');
+export async function aggregateDomain(domain: string): Promise<{ sources: any; report: AiReport }> {
+  logger.info({ domain }, 'Domain aggregator: starting investigation (Free APIs)');
 
-  const [crtResult, dnsResult, vtResult, whoisResult] = await Promise.allSettled([
-    queryCrtSh(domain),
-    queryDns(domain),
+  const [crtshResult, dnsResult, htResult, urlscanResult, vtResult] = await Promise.allSettled([
+    queryCrtsh(domain),
+    resolveAllDns(domain),
+    queryHackerTargetDns(domain),
+    queryUrlScanSearchDomain(domain),
     queryVtDomain(domain),
-    queryWhois(domain),
   ]);
 
-  const sources: DomainSources = {
-    crtsh: crtResult.status === 'fulfilled' ? crtResult.value : null,
+  const sources = {
+    crtsh: crtshResult.status === 'fulfilled' ? crtshResult.value : null,
     dns: dnsResult.status === 'fulfilled' ? dnsResult.value : null,
-    virustotal: vtResult.status === 'fulfilled' ? vtResult.value : null,
-    whois: whoisResult.status === 'fulfilled' ? whoisResult.value : null,
+    hackerTarget: htResult.status === 'fulfilled' ? htResult.value : null,
+    urlscan: urlscanResult.status === 'fulfilled' ? urlscanResult.value : null,
+    virusTotal: vtResult.status === 'fulfilled' ? vtResult.value : null,
   };
 
   const unavailable: string[] = [];
-  if (!sources.crtsh) unavailable.push('crt.sh (certificate transparency)');
-  if (!sources.dns) unavailable.push('DNS resolver');
-  if (!sources.virustotal) unavailable.push('VirusTotal (domain reputation)');
-  if (!sources.whois) unavailable.push('WHOIS (registration data)');
+  if (!sources.crtsh) unavailable.push('crt.sh (Certificate Data)');
+  if (!sources.dns) unavailable.push('Node.js DNS Resolver');
+  if (!sources.hackerTarget) unavailable.push('HackerTarget DNS');
+  if (!sources.urlscan) unavailable.push('URLScan.io Search');
+  if (!sources.virusTotal) unavailable.push('VirusTotal Domain');
+
+  if (
+    !sources.crtsh &&
+    !sources.dns &&
+    !sources.hackerTarget &&
+    !sources.urlscan &&
+    !sources.virusTotal
+  ) {
+    logger.warn({ domain }, 'All domain sources failed (graceful degradation)');
+    return {
+      sources,
+      report: {
+        riskLevel: 'unknown',
+        score: 0,
+        summary: 'No data sources available at this time. Network error or rate limits reached.',
+        indicators: [],
+        recommendations: ['Retry investigation later'],
+        tags: ['no-data'],
+      },
+    };
+  }
 
   const userData = formatDomainData(domain, sources);
   const aiResponse = await analyzeWithClaude(DOMAIN_SYSTEM_PROMPT, userData, unavailable);
 
-  logger.info(
-    { domain, riskLevel: aiResponse.report.riskLevel, score: aiResponse.report.score },
-    'Domain aggregator: investigation complete',
-  );
-
   return { sources, report: aiResponse.report };
 }
 
-function formatDomainData(domain: string, sources: DomainSources): string {
+function formatDomainData(domain: string, sources: any): string {
   const sections: string[] = [`# Domain Investigation: ${domain}\n`];
 
   if (sources.crtsh) {
-    const certs = sources.crtsh;
-    const uniqueSubdomains = new Set(certs.map((c) => c.commonName));
+    const certs = Array.isArray(sources.crtsh) ? sources.crtsh : [];
     sections.push(`## Certificate Transparency (crt.sh)`);
-    sections.push(`- Total certificates found: ${certs.length}`);
-    sections.push(`- Unique subdomains: ${uniqueSubdomains.size}`);
-
-    if (uniqueSubdomains.size > 0) {
-      sections.push('\n### Subdomains discovered:');
-      const sorted = [...uniqueSubdomains].sort();
-      for (const sub of sorted.slice(0, 30)) {
-        sections.push(`- ${sub}`);
-      }
-      if (sorted.length > 30) {
-        sections.push(`- ... and ${sorted.length - 30} more subdomains`);
-      }
-    }
-
-    // Show recent certificate timeline
-    const recent = certs.slice(0, 5);
-    if (recent.length > 0) {
-      sections.push('\n### Recent certificates:');
-      for (const cert of recent) {
-        sections.push(
-          `- ${cert.commonName}: issued ${cert.notBefore}, expires ${cert.notAfter} (by ${cert.issuerName.slice(0, 60)})`,
-        );
+    sections.push(`- Certificates found: ${certs.length}`);
+    if (certs.length > 0) {
+      const issuers = Array.from(new Set(certs.map((c: any) => c.issuer_name))).slice(0, 5);
+      sections.push(`- Issuers: ${issuers.join(' | ').replace(/\n/g, ' ')}`);
+      const recent = certs[0];
+      if (recent) {
+        sections.push(`- Not Before: ${recent.not_before}`);
       }
     }
   }
 
   if (sources.dns) {
     const d = sources.dns;
-    sections.push(`\n## DNS Records`);
-    if (d.a.length > 0) sections.push(`- A records: ${d.a.join(', ')}`);
-    if (d.aaaa.length > 0) sections.push(`- AAAA records: ${d.aaaa.join(', ')}`);
-    if (d.mx.length > 0) {
-      sections.push(`- MX records: ${d.mx.map((r) => `${r.exchange} (pri: ${r.priority})`).join(', ')}`);
-    }
-    if (d.ns.length > 0) sections.push(`- NS records: ${d.ns.join(', ')}`);
-    if (d.cname.length > 0) sections.push(`- CNAME records: ${d.cname.join(', ')}`);
-    if (d.txt.length > 0) {
-      sections.push('- TXT records:');
-      for (const txt of d.txt.slice(0, 10)) {
-        sections.push(`  - ${txt.slice(0, 200)}`);
-      }
-    }
-    if (d.soa) {
-      sections.push(`- SOA: ${d.soa.nsname} (hostmaster: ${d.soa.hostmaster})`);
+    sections.push(`## Raw DNS Records`);
+    if (d.A && d.A.length) sections.push(`- A: ${d.A.join(', ')}`);
+    if (d.MX && d.MX.length) sections.push(`- MX: ${d.MX.map((mx: any) => mx.exchange).join(', ')}`);
+    if (d.NS && d.NS.length) sections.push(`- NS: ${d.NS.join(', ')}`);
+    if (d.TXT && d.TXT.length) sections.push(`- TXT: ${d.TXT.map((t: any) => t.join(' ')).join(' | ')}`);
+  }
+
+  if (sources.hackerTarget) {
+    sections.push(`## HackerTarget DNS Lookup`);
+    sections.push('```\n' + sources.hackerTarget.substring(0, 500) + '\n```');
+  }
+
+  if (sources.urlscan && sources.urlscan.results) {
+    sections.push(`## URLScan.io Recent Scans`);
+    sections.push(`- Total available: ${sources.urlscan.total}`);
+    if (sources.urlscan.results.length > 0) {
+      sources.urlscan.results.forEach((r: any, idx: number) => {
+        sections.push(`  - [${idx}] URL: ${r.task.url} (IP: ${r.page.ip})`);
+      });
     }
   }
 
-  if (sources.virustotal) {
-    const v = sources.virustotal;
-    sections.push(`\n## Reputation (VirusTotal)`);
-    sections.push(`- Malicious: ${v.stats.malicious} vendors`);
-    sections.push(`- Suspicious: ${v.stats.suspicious} vendors`);
-    sections.push(`- Harmless: ${v.stats.harmless} vendors`);
-    sections.push(`- Undetected: ${v.stats.undetected} vendors`);
-    if (v.categories && Object.keys(v.categories).length > 0) {
-      sections.push(`- Categories: ${Object.values(v.categories).join(', ')}`);
+  if (sources.virusTotal && sources.virusTotal.data && sources.virusTotal.data.attributes) {
+    const vt = sources.virusTotal.data.attributes;
+    sections.push(`## VirusTotal Analysis`);
+    const stats = vt.last_analysis_stats;
+    if (stats) {
+      sections.push(`- Analysis Stats:`);
+      sections.push(`  - Malicious: ${stats.malicious}`);
+      sections.push(`  - Suspicious: ${stats.suspicious}`);
+      sections.push(`  - Undetected: ${stats.undetected}`);
+      sections.push(`  - Harmless: ${stats.harmless}`);
     }
-  }
-
-  if (sources.whois) {
-    const w = sources.whois;
-    sections.push(`\n## WHOIS Registration`);
-    sections.push(`- Domain: ${w.domainName}`);
-    sections.push(`- Registrar: ${w.registrar}`);
-    sections.push(`- Created: ${w.creationDate}`);
-    sections.push(`- Expires: ${w.expirationDate}`);
-    sections.push(`- Updated: ${w.updatedDate}`);
-    if (w.nameServers.length > 0) {
-      sections.push(`- Name Servers: ${w.nameServers.join(', ')}`);
-    }
-    if (w.registrantOrganization) {
-      sections.push(`- Registrant Org: ${w.registrantOrganization}`);
-    }
-    if (w.registrantCountry) {
-      sections.push(`- Registrant Country: ${w.registrantCountry}`);
-    }
-    if (w.status.length > 0) {
-      sections.push(`- Status: ${w.status.join(', ')}`);
-    }
+    if (vt.reputation !== undefined) sections.push(`- Reputation: ${vt.reputation}`);
+    if (vt.creation_date) sections.push(`- Creation Date TS: ${vt.creation_date}`);
   }
 
   return sections.join('\n');

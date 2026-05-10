@@ -37,6 +37,7 @@ const envSchema = z.object({
   IPINFO_TOKEN: z.string().optional(),
   ABUSEIPDB_API_KEY: z.string().optional(),
   HUNTER_API_KEY: z.string().optional(),
+  GOOGLE_SAFE_BROWSING_KEY: z.string().optional(),
 
   // ─── Rate Limiting ─────────────────────────────────────────
   RATE_LIMIT_MAX: z.coerce.number().int().positive().default(10),
